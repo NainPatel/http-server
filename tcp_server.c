@@ -1,11 +1,15 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 #include<sys/types.h>
-#include<netinet/in>
+#include<netinet/in.h>
+#include<signal.h>
+#include<arpa/inet.h>
+#include<unistd.h>
 
 #define MAX 1000
-#define PORT 8080
+#define PORT 9090
 
 int listend,clientd;
 struct sockaddr_in servaddr,clientaddr;
@@ -14,32 +18,32 @@ void
 processClientRequest(int);
 
 int main(){
-	if(listend=sock(AF_INET,SOCK_STREAM,0)<0){
+	listend=socket(AF_INET,SOCK_STREAM,0);
+	if(listend<0){
 		fprintf(stderr,"Error while making socket");
 		exit(-1);
 	}
 
 	memset(&servaddr, 0, sizeof(servaddr));
-	servadd.sin_family=AF_INET;
-	serveade.sin_port=htons(PORT);
-	serveadd.sin_addr.addr=htol(ANYADDR);
+	servaddr.sin_family=AF_INET;
+	servaddr.sin_port=htons(PORT);
+	servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
 
-	if(blind(listend,(struct sockaddr*)&servaddr,sizeof(servaddr))<0){
-		fprintf(stderr,"Binding failed");
+	if(bind(listend,(struct sockaddr*)&servaddr,sizeof(servaddr))<0){
+		perror("bind");
 		exit(-1);
 	}
-
-	if(listen(listend,5)<0){
+	if((listen(listend,5))<0){
 		fprintf(stderr,"listening of client failed");
 		exit(-1);
 	}
 
+	socklen_t client_len=sizeof(clientaddr);
 	while(1){
-		clientd=accept(listend,(struct sockaddr*)clientaddr,sizeof(clientaddr));
+		clientd=accept(listend,(struct sockaddr*)&clientaddr,&client_len);
 		if(fork()==0){
 			close(listend);
 			processClientRequest(clientd);
-			close(clientd);
 		}
 
 	}
@@ -50,5 +54,17 @@ int main(){
 
 void
 processClientRequest(int clientd){
-		
+	const char *html="<html><body><h1>hellow form c</h1></body></html>";
+	int content_lenght=strlen(html);
+	char header[521];
+	snprintf(header,sizeof(header),
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: %d\r\n"
+		"\r\n",content_lenght);
+	write(clientd,header,strlen(header));
+	write(clientd,html,content_lenght);
+	close(clientd);
 }
+
+
