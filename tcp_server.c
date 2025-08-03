@@ -39,15 +39,27 @@ int main(){
 	}
 
 	socklen_t client_len=sizeof(clientaddr);
-	while(1){
+	int test=1;
+
+	//this tells kernal that we dont care about child exit status 
+	//so it will just clean the child process after termination
+	signal(SIGCHLD, SIG_IGN);
+
+	while(test){
 		clientd=accept(listend,(struct sockaddr*)&clientaddr,&client_len);
+		if(clientd<0)
+			continue;
+
+		pid_t pid=fork();
 		if(fork()==0){
 			close(listend);
 			processClientRequest(clientd);
+			exit(0);
 		}
-
+		else if(pid>0){
+			close(clientd);
+		}
 	}
-
 	close(clientd);
 	return 0;
 }
