@@ -1,2 +1,6 @@
 *.out
 *.o
+key.pem
+cert.pem
+http_server
+
