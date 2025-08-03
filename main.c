@@ -1,4 +1,6 @@
 
+#include"parse.h"
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -14,8 +16,6 @@
 int listend,clientd;
 struct sockaddr_in servaddr,clientaddr;
 
-void
-processClientRequest(int);
 
 int main(){
 	listend=socket(AF_INET,SOCK_STREAM,0);
@@ -63,20 +63,4 @@ int main(){
 	close(clientd);
 	return 0;
 }
-
-void
-processClientRequest(int clientd){
-	const char *html="<html><body><h1>hellow form c</h1></body></html>";
-	int content_lenght=strlen(html);
-	char header[521];
-	snprintf(header,sizeof(header),
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/html\r\n"
-		"Content-Length: %d\r\n"
-		"\r\n",content_lenght);
-	write(clientd,header,strlen(header));
-	write(clientd,html,content_lenght);
-	close(clientd);
-}
-
 
