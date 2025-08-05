@@ -1,13 +1,21 @@
 # http-server
-making a http server from scratch in C
++ making a http server from scratch in C
 
 # Use make
 
-Only for compilation 
+1. Only for compilation 
 ```make```
 
-To run the server Or you can use this option to comiple and run
+2. To run the server Or you can use this option to comiple and run
 ```make run```
 
-For clean-up
+4. For clean-up
 ```make clean```
+
+# Dependency
+
++ Arch openssl ```pacman -S openssl```
++ Ubuntu/Debian libssl-dev ```apt install libssl-dev```
++ Fedora openssl-devel ```dnf install openssl-devel```
+
+

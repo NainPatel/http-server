@@ -6,7 +6,7 @@ CC=gcc
 CFLAGS= -Wall -Wextra -o2
 
 #add libs like -lpthread
-LDFLAGS=
+LDFLAGS=-lssl -lcrypto
 
 #project
 TARGET=http_server

@@ -1,7 +1,9 @@
 #ifndef HTTP_PARSE
 #define HTTP_PARSE
 
+#include<openssl/ssl.h>
+
 void
-processClientRequest(int);
+processClientRequest(SSL *ssl);
 
 #endif
