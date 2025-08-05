@@ -11,14 +11,19 @@
 #include<unistd.h>
 #include<openssl/ssl.h>
 #include<openssl/err.h>
+#include<pthread.h>
 
 #define PORT 9090
 
-int listend,clientd;
+int listend;
 struct sockaddr_in servaddr,clientaddr;
 
+void* Thread(void*);
 
 int main(){
+	int clientd;
+	struct sockaddr_in clientaddr;
+
 	listend=socket(AF_INET,SOCK_STREAM,0);
 	if(listend<0){
 		fprintf(stderr,"Error while making socket");
@@ -47,38 +52,55 @@ int main(){
 	signal(SIGCHLD, SIG_IGN);
 	
 	//init of SSL
-	SSL_library_init();
+	OPENSSL_init_ssl(0,NULL);
 	SSL_load_error_strings();
 	OpenSSL_add_all_algorithms();
 
 	//creating ssl context
 	SSL_CTX *ctx=SSL_CTX_new(TLS_server_method());
-	SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);  // Forcing TLS 1.2+
-	SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!MD5:!RC4");  // Only strong ciphers
 	SSL_CTX_use_certificate_file(ctx,"cert.pem",SSL_FILETYPE_PEM);
-	SSL_CTX_use_PrivateKey_file(ctx,"Key.pem",SSL_FILETYPE_PEM);
-	SSL *ssl=SSL_new(ctx);
+	SSL_CTX_use_PrivateKey_file(ctx,"key.pem",SSL_FILETYPE_PEM);
 
 	while(test){
 		clientd=accept(listend,(struct sockaddr*)&clientaddr,&client_len);
 		if(clientd<0)
 			continue;
 
-		pid_t pid=fork();
-		if(fork()==0){
-			close(listend);
-			SSL_set_fd(ssl,clientd);
-			SSL_accept(ssl);//TLS handshake
-			processClientRequest(ssl);
+		SSL *ssl=SSL_new(ctx);
+		
+		if(!ssl){
 			close(clientd);
-			exit(0);
+			continue;
 		}
-		else if(pid>0){
+
+		SSL_set_fd(ssl,clientd);
+	//TLS handshake
+		if(SSL_accept(ssl)<=0){
+			ERR_print_errors_fp(stderr);
+			SSL_free(ssl);
 			close(clientd);
+			continue;
+		}
+
+		pthread_t thread_id;
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
+		if(pthread_create(&thread_id,&attr,Thread,ssl)){
+				perror("pthread_create");
+				SSL_free(ssl);
+				close(clientd);
+				return 1;
 		}
 	}
 	SSL_CTX_free(ctx);
-	close(clientd);
 	return 0;
 }
 
+
+
+void* Thread(void* arg){
+	SSL* Thread_clientd=(SSL*)arg;
+	processClientRequest(Thread_clientd);
+	return NULL;
+}
